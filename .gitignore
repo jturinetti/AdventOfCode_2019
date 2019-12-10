@@ -1,0 +1,10 @@
+# General
+**/bin/**
+**/obj/**
+
+# Python
+__pycache__/
+*.py[cod]
+
+# F#
+**/.ionide/**
