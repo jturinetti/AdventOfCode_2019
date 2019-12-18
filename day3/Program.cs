@@ -20,11 +20,10 @@ namespace day3
 
             var solution = new Solution();
             solution.ProcessWireInstructions(wire1Instructions, wire2Instructions);
-            solution.FindIntersections();
-            var result = solution.FindManhattanDistance();
+            var intersections = solution.FindIntersections();
+            var result = solution.FindManhattanDistance(intersections);
 
             Console.WriteLine("Answer: " + result);
-            Console.ReadLine();
         }
     }
 }

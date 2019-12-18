@@ -79,7 +79,16 @@ public class Solution
                 // line 1: horizontal change, line 2: vertical change
                 else if (w1Coord1.Y == w1Coord2.Y && w2Coord1.X == w2Coord2.X)
                 {
-                    // TODO
+                    var yAxisCheck = ((w2Coord1.Y
+                        > w1Coord1.Y && w2Coord2.Y < w1Coord1.Y) || (w2Coord2.Y > w1Coord1.Y && w2Coord1.Y < w1Coord1.Y));
+                    var xAxisCheck = ((w1Coord1.X > w2Coord1.X && w1Coord2.X < w2Coord1.X)
+                        || (w1Coord2.X > w2Coord1.X && w1Coord1.X < w2Coord1.X));
+
+                    if (yAxisCheck && xAxisCheck)
+                    {
+                        // add intersection
+                        intersections.Add(new Pair(w2Coord1.X, w1Coord1.Y));
+                    }
                 }
             }
         }
@@ -87,10 +96,8 @@ public class Solution
         return intersections;
     }
 
-    public int FindManhattanDistance()
+    public int FindManhattanDistance(List<Pair> intersections)
     {
-        // TODO
-
-        return 0;
+        return intersections.Min(coord => Math.Abs(coord.X) + Math.Abs(coord.Y));
     }
 }
