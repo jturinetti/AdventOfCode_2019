@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 
 namespace Day3Solution
@@ -21,9 +22,11 @@ namespace Day3Solution
             var solution = new Solution();
             solution.ProcessWireInstructions(wire1Instructions, wire2Instructions);
             var intersections = solution.FindIntersections();
-            var result = solution.FindManhattanDistance(intersections);
+            var manhattanDistance = solution.FindManhattanDistance(intersections);
+            var minimizedSignalDelay = solution.FindMinimalSignalDelay(intersections);
 
-            Console.WriteLine("Answer: " + result);
+            Console.WriteLine("Manhattan Distance: " + manhattanDistance);
+            Console.WriteLine("Minimized Signal Delay: " + minimizedSignalDelay);
         }
     }
 }

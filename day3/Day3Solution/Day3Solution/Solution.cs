@@ -25,6 +25,7 @@ namespace Day3Solution
         {
             int x = 0;
             int y = 0;
+            int cumulativeLength = 0;
 
             foreach (var instruction in instructions)
             {
@@ -46,13 +47,20 @@ namespace Day3Solution
                         break;
                 }
 
-                wire.Coordinates.Add(new Pair(x, y));
+                cumulativeLength += length;
+
+                var coordinate = new Coordinate(x, y)
+                {
+                    StepsTaken = cumulativeLength
+                };
+
+                wire.Coordinates.Add(coordinate);
             }
         }
 
-        public List<Pair> FindIntersections()
+        public List<Coordinate> FindIntersections()
         {
-            var intersections = new List<Pair>();
+            var intersections = new List<Coordinate>();
 
             for (var index = 0; index < Wire1.Coordinates.Count - 1; index++)
             {   
@@ -75,8 +83,15 @@ namespace Day3Solution
                         if (yAxisCheck && xAxisCheck)
                         {
                             // add intersection
-                            intersections.Add(new Pair(w1Coord1.X, w2Coord1.Y));
-                        }              
+                            var intersection = new Coordinate(w1Coord1.X, w2Coord1.Y);
+                            
+                            var line1Steps = Math.Min(w1Coord1.StepsTaken, w1Coord2.StepsTaken) + Math.Abs(w2Coord1.Y - w1Coord1.Y);
+                            var line2Steps = Math.Min(w2Coord1.StepsTaken, w2Coord2.StepsTaken) + Math.Abs(w1Coord1.X - w2Coord1.X);
+
+                            intersection.StepsTaken = line1Steps + line2Steps;
+
+                            intersections.Add(intersection);
+                        }
                     }
                     // line 1: horizontal change, line 2: vertical change
                     else if (w1Coord1.Y == w1Coord2.Y && w2Coord1.X == w2Coord2.X)
@@ -89,7 +104,14 @@ namespace Day3Solution
                         if (yAxisCheck && xAxisCheck)
                         {
                             // add intersection
-                            intersections.Add(new Pair(w2Coord1.X, w1Coord1.Y));
+                            var intersection = new Coordinate(w2Coord1.X, w1Coord1.Y);
+                            
+                            var line1Steps = Math.Min(w1Coord1.StepsTaken, w1Coord2.StepsTaken) + Math.Abs(w2Coord1.X - w1Coord1.X);
+                            var line2Steps = Math.Min(w2Coord1.StepsTaken, w2Coord2.StepsTaken) + Math.Abs(w1Coord1.Y - w2Coord1.Y);
+
+                            intersection.StepsTaken = line1Steps + line2Steps;
+
+                            intersections.Add(intersection);
                         }
                     }
                 }
@@ -98,9 +120,14 @@ namespace Day3Solution
             return intersections;
         }
 
-        public int FindManhattanDistance(List<Pair> intersections)
+        public int FindManhattanDistance(List<Coordinate> intersections)
         {
             return intersections.Min(coord => Math.Abs(coord.X) + Math.Abs(coord.Y));
+        }
+
+        public int FindMinimalSignalDelay(List<Coordinate> intersections)
+        {
+            return intersections.Min(coord => coord.StepsTaken);
         }
     }
 }

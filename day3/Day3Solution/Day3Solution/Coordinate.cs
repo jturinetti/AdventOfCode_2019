@@ -1,8 +1,8 @@
 namespace Day3Solution
 {
-    public class Pair
+    public class Coordinate    
     {
-        public Pair(int x, int y)
+        public Coordinate(int x, int y)
         {
             X = x;
             Y = y;
@@ -10,5 +10,7 @@ namespace Day3Solution
 
         public int X {get;}
         public int Y {get;}
+
+        public int StepsTaken {get;set;}
     }
 }
