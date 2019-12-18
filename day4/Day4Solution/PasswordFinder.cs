@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Day4Solution
 {
@@ -18,34 +20,53 @@ namespace Day4Solution
                 {
                     continue;
                 }
-
-                var doubleFound = false;
+                
                 var allEqualOrGreater = true;
                 var currentDigitValue = Convert.ToInt16(numberString[0]);
+                var doubleDictionary = new Dictionary<int, int>();
 
                 for (int numberIndex = 1; numberIndex < numberString.Length; numberIndex++)
                 {
                     var nextDigitValue = Convert.ToInt16(numberString[numberIndex]);
-                    if (currentDigitValue == nextDigitValue)
-                    {
-                        doubleFound = true;
-                    }
-                    else if (nextDigitValue < currentDigitValue)
+
+                    if (nextDigitValue < currentDigitValue)
                     {
                         allEqualOrGreater = false;
                         break;
                     }
 
+                    if (currentDigitValue == nextDigitValue)
+                    {                        
+                        if (doubleDictionary.ContainsKey(currentDigitValue))
+                        {
+                            doubleDictionary[currentDigitValue] = doubleDictionary[currentDigitValue] + 1;
+                        }
+                        else
+                        {
+                            doubleDictionary.Add(currentDigitValue, 2);
+                        }
+                    }
+
                     currentDigitValue = nextDigitValue;
                 }
 
-                if (doubleFound && allEqualOrGreater)
+                if (allEqualOrGreater && AdjacentMatchingNumbersMeetConditions(doubleDictionary))
                 {
                     passwordCount++;
                 }
             }
 
             return passwordCount;
+        }
+
+        private bool AdjacentMatchingNumbersMeetConditions(Dictionary<int, int> doubleDictionary)
+        {
+            foreach (var key in doubleDictionary.Keys)
+            {
+                if (doubleDictionary[key] == 2) return true;
+            }
+
+            return false;
         }
     }
 }
