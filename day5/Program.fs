@@ -15,38 +15,44 @@ module Day5Solution =
         | 1 -> instructions.[currentInstruction + instructionOffset]
         | _ -> raise(InvalidParameterModeException(parameterMode))
 
+    let rec parseParameterModes(opCodeParameters: string, parameterModeArray: int list) = 
+        // TODO: this could be a bit smarter
+        if System.String.IsNullOrEmpty(opCodeParameters)
+        then
+            if parameterModeArray.Length = 1
+            then
+                List.concat [parameterModeArray; [0]]
+            else
+                parameterModeArray
+        else
+            let nextParameterMode = opCodeParameters.[opCodeParameters.Length - 1].ToString() |> int
+            parseParameterModes(opCodeParameters.Substring(0, opCodeParameters.Length - 1), List.concat [parameterModeArray; [nextParameterMode]])
+
     let performAddition (instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int) = 
         retrieveParameter(instructions, currentInstruction, 1, parameter1Mode) + retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
-        
 
     let performMultiplication (instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int) =
         retrieveParameter(instructions, currentInstruction, 1, parameter1Mode) * retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
 
     let rec intCodeProcessor (instructions: int list, currentInstruction: int, input: int) = 
-        
         let originalOpCode = instructions.[currentInstruction]
-
+        let stringOpCode = originalOpCode.ToString()
         let opCode = 
             if originalOpCode > 99
             then
-                let stringOpCode = originalOpCode.ToString()
                 stringOpCode.Substring(stringOpCode.Length - 2) |> int
             else
                 originalOpCode
 
-        let parameter1Mode = 
+        let parameterModeList = 
             if originalOpCode > 99
             then
-                originalOpCode.ToString().[originalOpCode.ToString().Length - 3].ToString() |> int
+                parseParameterModes(stringOpCode.Substring(0, stringOpCode.Length - 2), List.Empty)
             else
-                0
+                [0; 0]
 
-        let parameter2Mode = 
-            if originalOpCode > 99 && originalOpCode.ToString().Length > 3
-            then
-                originalOpCode.ToString().[originalOpCode.ToString().Length - 4].ToString() |> int
-            else
-                0
+        let parameter1Mode = parameterModeList.[0]
+        let parameter2Mode = parameterModeList.[1]
 
         if opCode = 99 
         then 
