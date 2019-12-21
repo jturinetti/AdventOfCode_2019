@@ -9,31 +9,18 @@ module Day5Solution =
 
     let parseStringToIntArray (str:string) = str.Split ',' |> Array.map (fun x -> x |> int) |> Seq.toList
 
+    let retrieveParameter(instructions: int list, currentInstruction: int, instructionOffset: int, parameterMode: int) = 
+        match parameterMode with 
+        | 0 -> instructions.[instructions.[currentInstruction + instructionOffset]]
+        | 1 -> instructions.[currentInstruction + instructionOffset]
+        | _ -> raise(InvalidParameterModeException(parameterMode))
+
     let performAddition (instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int) = 
-        let parameter1 = 
-            match parameter1Mode with
-            | 0 -> instructions.[instructions.[currentInstruction + 1]]
-            | 1 -> instructions.[currentInstruction + 1]
-            | _ -> raise(InvalidParameterModeException(parameter1Mode))
-        let parameter2 = 
-            match parameter2Mode with
-            | 0 -> instructions.[instructions.[currentInstruction + 2]]
-            | 1 -> instructions.[currentInstruction + 2]
-            | _ -> raise(InvalidParameterModeException(parameter2Mode))
-        parameter1 + parameter2
+        retrieveParameter(instructions, currentInstruction, 1, parameter1Mode) + retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
+        
 
     let performMultiplication (instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int) =
-        let parameter1 = 
-            match parameter1Mode with
-            | 0 -> instructions.[instructions.[currentInstruction + 1]]
-            | 1 -> instructions.[currentInstruction + 1]
-            | _ -> raise(InvalidParameterModeException(parameter1Mode))
-        let parameter2 = 
-            match parameter2Mode with
-            | 0 -> instructions.[instructions.[currentInstruction + 2]]
-            | 1 -> instructions.[currentInstruction + 2]
-            | _ -> raise(InvalidParameterModeException(parameter2Mode))
-        parameter1 * parameter2    
+        retrieveParameter(instructions, currentInstruction, 1, parameter1Mode) * retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
 
     let rec intCodeProcessor (instructions: int list, currentInstruction: int, input: int) = 
         
@@ -43,7 +30,7 @@ module Day5Solution =
             if originalOpCode > 99
             then
                 let stringOpCode = originalOpCode.ToString()
-                stringOpCode.Substring(stringOpCode.Length - 2) |> int                
+                stringOpCode.Substring(stringOpCode.Length - 2) |> int
             else
                 originalOpCode
 
@@ -66,20 +53,12 @@ module Day5Solution =
             instructions
         elif opCode = 3
         then            
-            let targetIndex = 
-                match parameter1Mode with 
-                | 0 -> instructions.[currentInstruction + 1]
-                | 1 -> instructions.[instructions.[currentInstruction + 1]]
-                | _ -> raise(InvalidParameterModeException(parameter1Mode))
+            let targetIndex = instructions.[currentInstruction + 1]
             let updatedInstructions = List.concat [instructions.[..targetIndex - 1]; [input]; instructions.[targetIndex + 1..]]
             intCodeProcessor(updatedInstructions, currentInstruction + 2, input)
         elif opCode = 4
-        then            
-            let valueToPrint = 
-                match parameter1Mode with 
-                | 0 -> instructions.[instructions.[currentInstruction + 1]]
-                | 1 -> instructions.[currentInstruction + 1]
-                | _ -> raise(InvalidParameterModeException(parameter1Mode))
+        then
+            let valueToPrint = retrieveParameter(instructions, currentInstruction, 1, parameter1Mode)
             printfn "%s" (valueToPrint.ToString())
             intCodeProcessor(instructions, currentInstruction + 2, input)
         else            
