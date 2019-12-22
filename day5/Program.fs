@@ -34,6 +34,15 @@ module Day5Solution =
     let performMultiplication (instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int) =
         retrieveParameter(instructions, currentInstruction, 1, parameter1Mode) * retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
 
+    let performJumpIfTrueOperation (instructions: int list, currentInstruction: int, parameter1Mode: int) = 
+        retrieveParameter(instructions, currentInstruction, 1, parameter1Mode) <> 0
+
+    let performLessThanOperation (instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int) = 
+        retrieveParameter(instructions, currentInstruction, 1, parameter1Mode) < retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
+
+    let performEqualToOperation (instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int) = 
+        retrieveParameter(instructions, currentInstruction, 1, parameter1Mode) = retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
+
     let rec intCodeProcessor (instructions: int list, currentInstruction: int, input: int) = 
         let originalOpCode = instructions.[currentInstruction]
         let stringOpCode = originalOpCode.ToString()
@@ -58,7 +67,7 @@ module Day5Solution =
         then 
             instructions
         elif opCode = 3
-        then            
+        then
             let targetIndex = instructions.[currentInstruction + 1]
             let updatedInstructions = List.concat [instructions.[..targetIndex - 1]; [input]; instructions.[targetIndex + 1..]]
             intCodeProcessor(updatedInstructions, currentInstruction + 2, input)
@@ -67,11 +76,51 @@ module Day5Solution =
             let valueToPrint = retrieveParameter(instructions, currentInstruction, 1, parameter1Mode)
             printfn "%s" (valueToPrint.ToString())
             intCodeProcessor(instructions, currentInstruction + 2, input)
-        else            
+        elif opCode = 5
+        then
+            if performJumpIfTrueOperation(instructions, currentInstruction, parameter1Mode)
+            then
+                let newInstructionValue = retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
+                let updatedInstructions = List.concat [instructions.[..currentInstruction - 1]; [newInstructionValue]; instructions.[currentInstruction + 1..]]
+                intCodeProcessor(updatedInstructions, currentInstruction, input)
+            else
+                intCodeProcessor(instructions, currentInstruction + 3, input)
+        elif opCode = 6
+        then
+            if not(performJumpIfTrueOperation(instructions, currentInstruction, parameter1Mode))
+            then
+                let newInstructionValue = retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
+                let updatedInstructions = List.concat [instructions.[..currentInstruction - 1]; [newInstructionValue]; instructions.[currentInstruction + 1..]]
+                intCodeProcessor(updatedInstructions, currentInstruction, input)
+            else
+                intCodeProcessor(instructions, currentInstruction + 3, input)
+        elif opCode = 7
+        then
+            let valueToWrite = 
+                if performLessThanOperation(instructions, currentInstruction, parameter1Mode, parameter2Mode)
+                then
+                    1
+                else
+                    0
+            let targetIndex = instructions.[currentInstruction + 3]
+            let updatedInstructions = List.concat [instructions.[..targetIndex - 1]; [valueToWrite]; instructions.[targetIndex + 1..]]
+            intCodeProcessor(updatedInstructions, currentInstruction + 4, input)
+        elif opCode = 8
+        then
+            let valueToWrite = 
+                if performEqualToOperation(instructions, currentInstruction, parameter1Mode, parameter2Mode)
+                then
+                    1
+                else
+                    0
+            let targetIndex = instructions.[currentInstruction + 3]
+            let updatedInstructions = List.concat [instructions.[..targetIndex - 1]; [valueToWrite]; instructions.[targetIndex + 1..]]
+            intCodeProcessor(updatedInstructions, currentInstruction + 4, input)
+        else
             let newValue = 
                 match opCode with 
                 | 1 -> performAddition(instructions, currentInstruction, parameter1Mode, parameter2Mode)
-                | 2 -> performMultiplication(instructions, currentInstruction, parameter1Mode, parameter2Mode)                
+                | 2 -> performMultiplication(instructions, currentInstruction, parameter1Mode, parameter2Mode)
                 | _ -> raise (InvalidIntCodeSequenceException(instructions.[currentInstruction], currentInstruction))
             let targetIndex = instructions.[currentInstruction + 3]
             let updatedInstructions = List.concat [instructions.[..targetIndex - 1]; [newValue]; instructions.[targetIndex + 1..]]
@@ -79,8 +128,8 @@ module Day5Solution =
 
 [<EntryPoint>]
 let main argv =
-    let inputFileName = "input.txt"
-    let input = argv.[0] |> int
+    let inputFileName = argv.[0]
+    let input = argv.[1] |> int
     let instructions = Day5Solution.parseStringToIntArray (Day5Solution.readFileLine inputFileName)
     let resultArray = Day5Solution.intCodeProcessor (instructions, 0, input)
     0 // return an integer exit code
