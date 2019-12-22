@@ -62,6 +62,9 @@ module Day5Solution =
 
         let parameter1Mode = parameterModeList.[0]
         let parameter2Mode = parameterModeList.[1]
+        
+        // printfn "Current instruction set: %A" instructions
+        // printfn "OpCode: %s" stringOpCode
 
         if opCode = 99 
         then 
@@ -74,24 +77,22 @@ module Day5Solution =
         elif opCode = 4
         then
             let valueToPrint = retrieveParameter(instructions, currentInstruction, 1, parameter1Mode)
-            printfn "%s" (valueToPrint.ToString())
+            printfn "%i" valueToPrint
             intCodeProcessor(instructions, currentInstruction + 2, input)
         elif opCode = 5
         then
             if performJumpIfTrueOperation(instructions, currentInstruction, parameter1Mode)
             then
-                let newInstructionValue = retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
-                let updatedInstructions = List.concat [instructions.[..currentInstruction - 1]; [newInstructionValue]; instructions.[currentInstruction + 1..]]
-                intCodeProcessor(updatedInstructions, currentInstruction, input)
+                let newInstructionPointer = retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
+                intCodeProcessor(instructions, newInstructionPointer, input)
             else
                 intCodeProcessor(instructions, currentInstruction + 3, input)
         elif opCode = 6
         then
             if not(performJumpIfTrueOperation(instructions, currentInstruction, parameter1Mode))
             then
-                let newInstructionValue = retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
-                let updatedInstructions = List.concat [instructions.[..currentInstruction - 1]; [newInstructionValue]; instructions.[currentInstruction + 1..]]
-                intCodeProcessor(updatedInstructions, currentInstruction, input)
+                let newInstructionPointer = retrieveParameter(instructions, currentInstruction, 2, parameter2Mode)
+                intCodeProcessor(instructions, newInstructionPointer, input)
             else
                 intCodeProcessor(instructions, currentInstruction + 3, input)
         elif opCode = 7
@@ -132,4 +133,5 @@ let main argv =
     let input = argv.[1] |> int
     let instructions = Day5Solution.parseStringToIntArray (Day5Solution.readFileLine inputFileName)
     let resultArray = Day5Solution.intCodeProcessor (instructions, 0, input)
+    // printfn "Final instruction set: %A" resultArray
     0 // return an integer exit code
