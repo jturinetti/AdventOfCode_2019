@@ -73,6 +73,61 @@ namespace Day6Solution
             return CalculateOrbitsImpl(centerOfMass, 0);
         }
 
+        public int CalculateYOUToSANOrbits()
+        {
+            if (!Data.ContainsKey("YOU") || !Data.ContainsKey("SAN"))
+            {
+                return -1;
+            }
+
+            var youPathNode = Data["YOU"];
+            var sanPathNode = Data["SAN"];
+
+            var youParentWalkCounts = new Dictionary<string, int>();
+            var sanParentWalkCounts = new Dictionary<string, int>();
+            var youPathLength = 0;
+            var sanPathLength = 0;
+            var resultKey = "";
+
+            var commonParentFound = false;
+            while (!commonParentFound)
+            {
+                if (youPathNode.Parent != null)
+                {
+                    youPathLength++;
+                    youParentWalkCounts.Add(youPathNode.Parent.Id, youPathLength);
+
+                    if (sanParentWalkCounts.ContainsKey(youPathNode.Parent.Id))
+                    {
+                        commonParentFound = true;
+                        resultKey = youPathNode.Parent.Id;
+                    }
+                    else
+                    {
+                        youPathNode = youPathNode.Parent;
+                    }
+                }
+
+                if (sanPathNode.Parent != null)
+                {
+                    sanPathLength++;
+                    sanParentWalkCounts.Add(sanPathNode.Parent.Id, sanPathLength);
+
+                    if (youParentWalkCounts.ContainsKey(sanPathNode.Parent.Id))
+                    {
+                        commonParentFound = true;
+                        resultKey = sanPathNode.Parent.Id;
+                    }
+                    else
+                    {
+                        sanPathNode = sanPathNode.Parent;
+                    }
+                }
+            }
+
+            return youParentWalkCounts[resultKey] + sanParentWalkCounts[resultKey] - 2;
+        }
+
         private int CalculateOrbitsImpl(Node currentNode, int currentDepth)
         {
             var parentLabel = currentNode.Parent?.Id ?? "null";

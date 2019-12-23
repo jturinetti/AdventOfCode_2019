@@ -21,7 +21,16 @@ namespace Day6Solution
             // calculate total orbits
             var result = solution.CalculateOrbits();
 
-            Console.WriteLine(result);
+            Console.WriteLine();
+            Console.WriteLine($"Total Orbits: {result}");
+
+            // calculate YOU to SAN
+            var result2 = solution.CalculateYOUToSANOrbits();
+
+            Console.WriteLine();
+            Console.WriteLine($"YOU to SAN Orbits: {result2}");
+
+            Console.WriteLine();
         }
     }
 }
