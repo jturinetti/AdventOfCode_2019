@@ -133,6 +133,19 @@ module Day7Solution =
 
         maximumSignalOutput
 
+    and feedbackLoopLargestSignalOutput (instructions: int list) = 
+        let phaseSettingArray = [|5; 6; 7; 8; 9;|]
+        let mutable maximumSignalOutput = -1
+        for permutationIndex in 0 .. phaseSettingArray.Length - 1 do
+            let phaseSettingPermutation = Array.permute (fun index -> (index + permutationIndex) % phaseSettingArray.Length) phaseSettingArray
+            let signalOutput = amplificationCircuit (instructions, phaseSettingPermutation, 0, 0)
+            if signalOutput > maximumSignalOutput
+            then
+                printfn "New maximum found (%i) for phase setting %A" signalOutput phaseSettingPermutation
+                maximumSignalOutput <- signalOutput
+
+        maximumSignalOutput
+
 [<EntryPoint>]
 let main argv =
     let inputFileName = argv.[0]
@@ -143,7 +156,10 @@ let main argv =
     // let outputSignal = Day7Solution.amplificationCircuit (instructions, phaseSettingString, 0, input)
     // printfn "Output Signal for phase setting %s is %i" phaseSettingString outputSignal
 
-    let largestOutputSignal = Day7Solution.findLargestSignalOutput (instructions)
-    printfn "Largest Output Signal is %i" largestOutputSignal
+    // let largestOutputSignal = Day7Solution.findLargestSignalOutput (instructions)
+    // printfn "Largest Output Signal is %i" largestOutputSignal
+
+    let largestFeedbackLoopSignalOutput = Day7Solution.feedbackLoopLargestSignalOutput (instructions)
+    printfn "Largest Feedback Loop Signal Output is %i" largestFeedbackLoopSignalOutput
 
     0 // return an integer exit code
