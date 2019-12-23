@@ -10,7 +10,7 @@ namespace Day6Solution
             var solution = new Solution();
 
             // read input and create data structure
-            using (StreamReader fileStream = new StreamReader(new FileInfo("input.txt").OpenRead()))
+            using (StreamReader fileStream = new StreamReader(new FileInfo(args[0]).OpenRead()))
             {
                 while (!fileStream.EndOfStream)
                 {

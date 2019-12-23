@@ -75,14 +75,16 @@ namespace Day6Solution
 
         private int CalculateOrbitsImpl(Node currentNode, int currentDepth)
         {
-            currentDepth++;
+            var parentLabel = currentNode.Parent?.Id ?? "null";
+            Console.WriteLine($"Parent: {parentLabel}, Current: {currentNode.Id}");
+            Console.WriteLine($"Current Depth: {currentDepth}");
+
             if (!currentNode.Children.Any())
             {
-                // return ((currentDepth ^ 2) + 1) / 2;
                 return currentDepth;
             }
 
-            return currentNode.Children.Sum(n => CalculateOrbitsImpl(n, currentDepth));
+            return currentDepth + currentNode.Children.Sum(n => CalculateOrbitsImpl(n, currentDepth + 1));
         }
     }
 
