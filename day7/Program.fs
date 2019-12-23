@@ -78,7 +78,7 @@ module Day7Solution =
         | 4 ->
             let valueToPrint = getValueByParameterMode(instructions, currentInstruction, 1, parameter1Mode)
             printfn "%i" valueToPrint
-            amplifierOutput <- valueToPrint
+            amplifierOutput <- valueToPrint // set mutable output value
             intCodeProcessor(instructions, currentInstruction + 2, input)
         | 5 -> jumpFunc(jumpIfTrue, instructions, currentInstruction, parameter1Mode, parameter2Mode, input)
         | 6 -> jumpFunc(jumpIfFalse, instructions, currentInstruction, parameter1Mode, parameter2Mode, input)
@@ -111,24 +111,39 @@ module Day7Solution =
         let updatedInstructions = List.concat [instructions.[..targetIndex - 1]; [valueToWrite]; instructions.[targetIndex + 1..]]
         intCodeProcessor(updatedInstructions, currentInstruction + 4, input)
 
-    and amplificationCircuit (instructions: int list, phaseSettingString: string, phaseIndex: int, input: int) = 
-        if phaseIndex = phaseSettingString.Length
+    and amplificationCircuit (instructions: int list, phaseSettingArray: int array, phaseIndex: int, input: int) = 
+        if phaseIndex = phaseSettingArray.Length
         then
             amplifierOutput
         else
-            let phaseSetting = phaseSettingString.[phaseIndex].ToString() |> int
+            let phaseSetting = phaseSettingArray.[phaseIndex].ToString() |> int
             intCodeProcessor (instructions, 0, [phaseSetting; input]) |> ignore
-            amplificationCircuit (instructions, phaseSettingString, phaseIndex + 1, amplifierOutput)
+            amplificationCircuit (instructions, phaseSettingArray, phaseIndex + 1, amplifierOutput)
+
+    and findLargestSignalOutput (instructions: int list) = 
+        let phaseSettingArray = [|0; 1; 2; 3; 4;|]
+        let mutable maximumSignalOutput = -1
+        for permutationIndex in 0 .. phaseSettingArray.Length - 1 do
+            let phaseSettingPermutation = Array.permute (fun index -> (index + permutationIndex) % phaseSettingArray.Length) phaseSettingArray
+            let signalOutput = amplificationCircuit (instructions, phaseSettingPermutation, 0, 0)
+            if signalOutput > maximumSignalOutput
+            then
+                printfn "New maximum found (%i) for phase setting %A" signalOutput phaseSettingPermutation
+                maximumSignalOutput <- signalOutput
+
+        maximumSignalOutput
 
 [<EntryPoint>]
 let main argv =
     let inputFileName = argv.[0]
     let instructions = Day7Solution.parseStringToIntArray (Day7Solution.readFileLine inputFileName)
-    let phaseSettingString = argv.[1].ToString()
-    let input = argv.[2] |> int
+    
+    // let phaseSettingString = argv.[1].ToString()
+    // let input = argv.[2] |> int
+    // let outputSignal = Day7Solution.amplificationCircuit (instructions, phaseSettingString, 0, input)
+    // printfn "Output Signal for phase setting %s is %i" phaseSettingString outputSignal
 
-    let outputSignal = Day7Solution.amplificationCircuit (instructions, phaseSettingString, 0, input)
-
-    printfn "Output Signal for phase setting %s is %i" phaseSettingString outputSignal
+    let largestOutputSignal = Day7Solution.findLargestSignalOutput (instructions)
+    printfn "Largest Output Signal is %i" largestOutputSignal
 
     0 // return an integer exit code
