@@ -14,6 +14,21 @@ module Day7Solution =
 
     let parseStringToIntArray (str:string) = str.Split ',' |> Array.map (fun x -> x |> int) |> Seq.toList
 
+    // these permutation functions are borrowed from StackOverflow https://stackoverflow.com/questions/1526046/f-permutations
+    let distrib e L =
+        let rec aux pre post = 
+            seq {
+                match post with
+                | [] -> yield (L @ [e])
+                | h::t -> yield (List.rev pre @ [e] @ post)
+                          yield! aux (h::pre) t 
+            }
+        aux [] L
+
+    let rec perms = function 
+        | [] -> Seq.singleton []
+        | h::t -> Seq.collect (distrib h) (perms t)
+
     let getValueByParameterMode(instructions: int list, currentInstruction: int, instructionOffset: int, parameterMode: int) = 
         match parameterMode with 
         | 0 -> instructions.[instructions.[currentInstruction + instructionOffset]]
@@ -51,12 +66,7 @@ module Day7Solution =
         getValueByParameterMode(instructions, currentInstruction, 1, parameter1Mode) = getValueByParameterMode(instructions, currentInstruction, 2, parameter2Mode)    
 
     let rec intCodeProcessor (instructions: int list, currentInstruction: int, input: int list) = 
-        
         let originalOpCode = instructions.[currentInstruction]
-
-        printfn "Current OpCode: %i" originalOpCode
-        printfn "Current Input Array: %A" input
-
         let stringOpCode = originalOpCode.ToString()
         let opCode = 
             if originalOpCode > 99
@@ -127,7 +137,7 @@ module Day7Solution =
         let updatedInstructions = List.concat [instructions.[..targetIndex - 1]; [valueToWrite]; instructions.[targetIndex + 1..]]
         intCodeProcessor(updatedInstructions, currentInstruction + 4, input)
 
-    and amplificationCircuit (instructions: int list, phaseSettingArray: int array, phaseIndex: int, input: int) = 
+    and amplificationCircuit (instructions: int list, phaseSettingArray: int list, phaseIndex: int, input: int) = 
         if phaseIndex = phaseSettingArray.Length
         then
             amplifierOutput
@@ -136,7 +146,7 @@ module Day7Solution =
             intCodeProcessor (instructions, 0, [phaseSetting; input]) |> ignore
             amplificationCircuit (instructions, phaseSettingArray, phaseIndex + 1, amplifierOutput)
 
-    and amplificationCircuitWithFeedbackLoop (instructionsArray: int list list, currentInstructionArray: int list, haltedArray: bool list, phaseSettingArray: int array, phaseIndex: int, input: int) = 
+    and amplificationCircuitWithFeedbackLoop (instructionsArray: int list list, currentInstructionArray: int list, haltedArray: bool list, phaseSettingArray: int list, phaseIndex: int, input: int) = 
         halted <- false
         if List.forall(fun elem -> elem = true) haltedArray
         then
@@ -152,21 +162,17 @@ module Day7Solution =
                     [phaseSetting; input]
             
             let modIndex = phaseIndex % phaseSettingArray.Length
-            printfn "Executing instructions on Amplifier %s" (mapIndexToAmplifier(modIndex))
             let updatedInstructions = intCodeProcessor (instructionsArray.[modIndex], currentInstructionArray.[modIndex], inputArray)
-           
             let updatedInstructionsList = List.concat [instructionsArray.[..modIndex - 1]; [updatedInstructions]; instructionsArray.[modIndex + 1..]]
             let updatedInstructionPointerList = List.concat [currentInstructionArray.[..modIndex - 1]; [currentInstructionIndex]; currentInstructionArray.[modIndex + 1..]]
             let updatedHaltedList = List.concat [haltedArray.[..modIndex - 1]; [halted]; haltedArray.[modIndex + 1..]]
             
-            amplificationCircuitWithFeedbackLoop (updatedInstructionsList, updatedInstructionPointerList, updatedHaltedList, phaseSettingArray, phaseIndex + 1, amplifierOutput)            
-            
+            amplificationCircuitWithFeedbackLoop (updatedInstructionsList, updatedInstructionPointerList, updatedHaltedList, phaseSettingArray, phaseIndex + 1, amplifierOutput)           
 
     and findLargestSignalOutput (instructions: int list) = 
-        let phaseSettingArray = [|0; 1; 2; 3; 4;|]
+        let phaseSettingArray = [0; 1; 2; 3; 4;]
         let mutable maximumSignalOutput = -1
-        for permutationIndex in 0 .. phaseSettingArray.Length - 1 do
-            let phaseSettingPermutation = Array.permute (fun index -> (index + permutationIndex) % phaseSettingArray.Length) phaseSettingArray
+        for phaseSettingPermutation in (perms phaseSettingArray) do
             let signalOutput = amplificationCircuit (instructions, phaseSettingPermutation, 0, 0)
             if signalOutput > maximumSignalOutput
             then
@@ -176,14 +182,13 @@ module Day7Solution =
         maximumSignalOutput
 
     and findLargestSignalOutputWithFeedbackLoop (instructions: int list) = 
-        let phaseSettingArray = [|5; 6; 7; 8; 9;|]
+        let phaseSettingArray = [5; 6; 7; 8; 9;]
         let instructionsList = [instructions; instructions; instructions; instructions; instructions]
         let mutable maximumSignalOutput = -1
-        for permutationIndex in 0 .. phaseSettingArray.Length - 1 do
-            let phaseSettingPermutation = Array.permute (fun index -> (index + permutationIndex) % phaseSettingArray.Length) phaseSettingArray
+        for phaseSettingPermutation in (perms phaseSettingArray) do
             printfn "Phase Permutation: %A" phaseSettingPermutation
             resetMutableVariables()
-            let signalOutput = amplificationCircuitWithFeedbackLoop (instructionsList, [0; 0; 0; 0; 0], [false; false; false; false; false],  phaseSettingPermutation, 0, 0)
+            let signalOutput = amplificationCircuitWithFeedbackLoop (instructionsList, [0; 0; 0; 0; 0], [false; false; false; false; false], phaseSettingPermutation, 0, 0)
             if signalOutput > maximumSignalOutput
             then
                 printfn "New maximum found (%i) for phase setting %A" signalOutput phaseSettingPermutation
@@ -213,12 +218,17 @@ let main argv =
     
     // let phaseSettingString = argv.[1].ToString()
     // let phaseSettingArray = phaseSettingString |> Array.ofSeq |> Array.map(fun c -> (c.ToString() |> int))
-    // let input = argv.[2] |> int
-    // let outputSignal = Day7Solution.amplificationCircuit (instructions, phaseSettingArray, 0, input)
+    // let outputSignal = Day7Solution.amplificationCircuit (instructions, phaseSettingArray, 0, 0)
     // printfn "Output Signal for phase setting %s is %i" phaseSettingString outputSignal
 
     // let largestOutputSignal = Day7Solution.findLargestSignalOutput (instructions)
     // printfn "Largest Output Signal is %i" largestOutputSignal
+
+    // let phaseSettingString = argv.[1].ToString()
+    // let phaseSettingArray = phaseSettingString |> Array.ofSeq |> Array.map(fun c -> (c.ToString() |> int))
+    // let instructionsList = [instructions; instructions; instructions; instructions; instructions]
+    // let outputSignal = Day7Solution.amplificationCircuitWithFeedbackLoop(instructionsList, [0; 0; 0; 0; 0], [false; false; false; false; false], phaseSettingArray, 0, 0)
+    // printfn "Output Signal for phase setting with feedback loop %s is %i" phaseSettingString outputSignal
 
     let largestOutputSignal = Day7Solution.findLargestSignalOutputWithFeedbackLoop (instructions)
     printfn "Largest Output Signal is %i" largestOutputSignal
