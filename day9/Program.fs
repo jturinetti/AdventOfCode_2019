@@ -11,15 +11,52 @@ module Day9Solution =
 
     let parseStringToIntArray (str:string) = str.Split ',' |> Array.map (fun x -> x |> int) |> Seq.toList
 
-    let getValueByParameterMode(instructions: int list, currentInstruction: int, instructionOffset: int, parameterMode: int, relativeBase: int) = 
+    let rec extendMemory (instructions: int list, targetAddress: int, parameterMode: int, relativeBase: int) =   
+        printfn "Current length of instruction array: %i" instructions.Length
+        printfn "Target address: %i" targetAddress
+        if targetAddress >= instructions.Length
+        then
+            printfn "Extending memory by %i entries" (targetAddress - instructions.Length)
+            extendMemory(instructions @ [0..(targetAddress - instructions.Length)], targetAddress, parameterMode, relativeBase)
+        else
+            match parameterMode with 
+            | 0 -> 
+                let valueAtAddress = instructions.[targetAddress]
+                printfn "Value at address: %i" valueAtAddress
+                if valueAtAddress >= instructions.Length
+                then
+                    printfn "Extending memory by %i entries" (valueAtAddress - instructions.Length)
+                    instructions @ [0..(valueAtAddress - instructions.Length)]
+                else
+                    instructions
+            | 1 -> instructions
+            | 2 ->
+                let valueAtAddress = instructions.[targetAddress]
+                if valueAtAddress >= instructions.Length
+                then
+                    printfn "Extending memory by %i entries" (valueAtAddress - instructions.Length)
+                    let updatedInstructions = instructions @ [0..(valueAtAddress - instructions.Length)]
+                    let relativeBaseAddress = valueAtAddress + relativeBase
+                    printfn "Value at address with relative base: %i" relativeBaseAddress
+                    if relativeBaseAddress >= updatedInstructions.Length
+                    then
+                        printfn "Extending memory by %i entries" (relativeBaseAddress - updatedInstructions.Length)
+                        updatedInstructions @ [0..(relativeBaseAddress - updatedInstructions.Length)]
+                    else
+                        updatedInstructions
+                else
+                    instructions
+            | _ -> raise(InvalidParameterModeException(parameterMode))
+
+    let getValueByParameterMode (instructions: int list, currentInstruction: int, instructionOffset: int, parameterMode: int, relativeBase: int) = 
         match parameterMode with 
         | 0 -> instructions.[instructions.[currentInstruction + instructionOffset]]
         | 1 -> instructions.[currentInstruction + instructionOffset]
-        | 2 -> instructions.[currentInstruction + instructionOffset + relativeBase]
+        | 2 -> instructions.[instructions.[currentInstruction + instructionOffset] + relativeBase]
         | _ -> raise(InvalidParameterModeException(parameterMode))
 
     // not especially proud of this function but it works
-    let rec parseParameterModes(opCodeParameters: string, parameterModeArray: int list) = 
+    let rec parseParameterModes (opCodeParameters: string, parameterModeArray: int list) = 
         if parameterModeArray.Length = 2
         then
             parameterModeArray
@@ -71,8 +108,16 @@ module Day9Solution =
         if debugMode
         then
             printfn "OpCode %i" originalOpCode
+            printfn "Current instruction address %i" currentInstruction
             printfn "Parameter Modes %A" parameterModeList
-        
+            printfn "Relative Base %i" relativeBase
+
+        // matchFunc -> 3 parameters
+        // opcodes 3 & 4 -> 1 parameter
+        // jumpFunc -> 
+        // comparisonFunc -> 
+        // opcode 9 -> 
+
         match opCode with
         | 99 -> instructions
         | 1 -> mathFunc(add, instructions, currentInstruction, parameter1Mode, parameter2Mode, input, relativeBase)
@@ -94,29 +139,36 @@ module Day9Solution =
 
     and mathFunc (func: (int list * int * int * int * int -> int), instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int, input: int, relativeBase: int) = 
         let updatedInstructions = 
-            let calculatedValue = func(instructions, currentInstruction, parameter1Mode, parameter2Mode, relativeBase)
-            let targetIndex = instructions.[currentInstruction + 3]
-            List.concat [instructions.[..targetIndex - 1]; [calculatedValue]; instructions.[targetIndex + 1..]]
+            let extendedInstructions1 = extendMemory(instructions, currentInstruction + 1, parameter1Mode, relativeBase)
+            let extendedInstructions2 = extendMemory(extendedInstructions1, currentInstruction + 2, parameter2Mode, relativeBase)
+            let calculatedValue = func(extendedInstructions2, currentInstruction, parameter1Mode, parameter2Mode, relativeBase)
+            let targetIndex = extendedInstructions2.[currentInstruction + 3]
+            List.concat [extendedInstructions2.[..targetIndex - 1]; [calculatedValue]; extendedInstructions2.[targetIndex + 1..]]
         intCodeProcessor(updatedInstructions, currentInstruction + 4, input, relativeBase)
 
     and jumpFunc (func: (int list * int * int * int -> bool), instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int, input: int, relativeBase: int) = 
-        let funcResult = func(instructions, currentInstruction, parameter1Mode, relativeBase)
+        let extendedInstructions1 = extendMemory(instructions, currentInstruction + 1, parameter1Mode, relativeBase)
+        let extendedInstructions2 = extendMemory(extendedInstructions1, currentInstruction + 2, parameter2Mode, relativeBase)
+        let funcResult = func(extendedInstructions2, currentInstruction, parameter1Mode, relativeBase)
         match funcResult with
         | true -> 
-            let newInstructionPointer = getValueByParameterMode(instructions, currentInstruction, 2, parameter2Mode, relativeBase)
-            intCodeProcessor(instructions, newInstructionPointer, input, relativeBase)
-        | false -> intCodeProcessor(instructions, currentInstruction + 3, input, relativeBase)
+            let newInstructionPointer = getValueByParameterMode(extendedInstructions2, currentInstruction, 2, parameter2Mode, relativeBase)
+            intCodeProcessor(extendedInstructions2, newInstructionPointer, input, relativeBase)
+        | false -> intCodeProcessor(extendedInstructions2, currentInstruction + 3, input, relativeBase)
 
     and comparisonFunc (func: (int list * int * int * int * int -> bool), instructions: int list, currentInstruction: int, parameter1Mode: int, parameter2Mode: int, input: int, relativeBase: int) = 
+        let extendedInstructions1 = extendMemory(instructions, currentInstruction + 1, parameter1Mode, relativeBase)
+        let extendedInstructions2 = extendMemory(extendedInstructions1, currentInstruction + 2, parameter2Mode, relativeBase)
+        let targetIndex = extendedInstructions2.[currentInstruction + 3]
+        let extendedInstructions3 = extendMemory(extendedInstructions2, targetIndex, 0, relativeBase)
         let valueToWrite = 
-            let funcResult = func(instructions, currentInstruction, parameter1Mode, parameter2Mode, relativeBase)
+            let funcResult = func(extendedInstructions3, currentInstruction, parameter1Mode, parameter2Mode, relativeBase)
             match funcResult with
             | true -> 1
             | false -> 0
-        
         let updatedInstructions = 
-            let targetIndex = instructions.[currentInstruction + 3]
-            List.concat [instructions.[..targetIndex - 1]; [valueToWrite]; instructions.[targetIndex + 1..]]
+            List.concat [extendedInstructions3.[..targetIndex - 1]; [valueToWrite]; extendedInstructions3.[targetIndex + 1..]]
+        printfn "test3"
         intCodeProcessor(updatedInstructions, currentInstruction + 4, input, relativeBase)
 
 [<EntryPoint>]
